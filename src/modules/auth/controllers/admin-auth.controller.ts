@@ -1,7 +1,7 @@
 import { AdminJwtAccessAuthGuard } from './../guards/admin-jwt-access-auth.guard';
 import { JoiValidationPipe } from '@common/pipes';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { GetStartedDto, RefreshTokenDto } from '../dtos';
+import { GetStartedDto, LoginDto, RefreshTokenDto } from '../dtos';
 import { LocalAuthGuard } from '../guards';
 import { AuthService } from '../services';
 import { GetStartedValidator, RefreshTokenValidator } from '../validators';
@@ -19,8 +19,8 @@ export class AdminAuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login() {
-    return this._authService.adminLogin();
+  async login(@Body() data: LoginDto) {
+    return this._authService.adminLogin(data);
   }
 
   @Post('refresh-token')

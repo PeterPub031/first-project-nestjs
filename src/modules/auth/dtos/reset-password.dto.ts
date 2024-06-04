@@ -1,5 +1,5 @@
 export class ResetPasswordDto {
-  id: string;
+  // id: string;
   code: string;
   password: string;
 }

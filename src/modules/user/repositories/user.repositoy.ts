@@ -14,9 +14,14 @@ export class UserRepository {
         return this._model.create({data});
     }
 
-    async findOne(params: Prisma.UserFindFirstArgs) {
+    async findUserById(params: Prisma.UserFindFirstArgs) {
         return this._model.findFirst(params);
     }
+
+    async findOneWithEmail(params: Prisma.UserFindFirstArgs) {
+        return this._model.findFirst(params);
+    }
+
 
     async findMany(params: Prisma.UserFindManyArgs) {
         return this._model.findMany(params);

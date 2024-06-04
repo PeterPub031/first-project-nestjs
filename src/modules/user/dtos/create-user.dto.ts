@@ -5,4 +5,6 @@ export class CreateUserDto {
     lastName?: string;
     adminStatus: string;
     userStatus: string;
+    isAdmin: boolean;
+    isUser: boolean
 }

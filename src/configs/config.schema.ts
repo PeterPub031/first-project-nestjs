@@ -1,6 +1,8 @@
 import * as Joi from 'joi';
-import { Environment } from '@common/enums';
+
 import { CONFIG_VAR, DEFAULT_PORT } from '@config/index';
+
+import { Environment } from '@common/enums';
 
 export const ConfigSchema = Joi.object()
   .keys({
@@ -17,5 +19,7 @@ export const ConfigSchema = Joi.object()
     [CONFIG_VAR.ADMIN_JWT_REFRESH_SECRET]: Joi.string().trim().required(),
     [CONFIG_VAR.JWT_EXPIRES_IN]: Joi.string().trim().required(),
     [CONFIG_VAR.JWT_REFRESH_EXPIRES_IN]: Joi.string().trim().required(),
+    [CONFIG_VAR.JWT_FORGOT_SECRET]: Joi.string().trim().required(),
+    [CONFIG_VAR.JWT_FORGOT_TOKEN_EXPIRES_IN]: Joi.string().trim().required(),
   })
   .options({ stripUnknown: true });

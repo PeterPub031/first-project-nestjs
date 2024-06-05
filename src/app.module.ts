@@ -4,6 +4,7 @@ import { AllExceptionsFilter } from '@common/filters';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from '@modules/auth/auth.module';
+import { CategoryModule } from '@modules/categories/category.module';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigSchema } from '@config/config.schema';
 import { EmailModule } from '@shared/email/email.module';
@@ -30,7 +31,8 @@ import { UserModule } from '@modules/user/user.module';
 
     // Feature modules
     AuthModule,
-    UserModule
+    UserModule,
+    CategoryModule
   ],
   controllers: [AppController],
   providers: [

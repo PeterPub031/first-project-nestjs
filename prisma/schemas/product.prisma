@@ -1,0 +1,15 @@
+model Product {
+    id          String   @id @default(uuid()) @db.VarChar(36)
+    name        String   @db.VarChar(255)
+    description String?  @db.Text
+    price       Float
+    details     String   @db.VarChar(255)
+    color       String?  @db.VarChar(255)
+    imageURL    String   @map("image_url") @db.Text
+    category    Category @relation(fields: [categoryId], references: [id])
+    categoryId  String   @map("category_id") @db.VarChar(36)
+
+    createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+    updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz(3)
+    deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+}

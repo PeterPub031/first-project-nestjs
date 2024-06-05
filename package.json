@@ -32,7 +32,8 @@
     "prisma:migrate:prod": "dotenv -e .env.production -- npx prisma migrate deploy",
     "prisma:seed:dev": "dotenv -e .env.development -- npx prisma db seed",
     "prisma:seed:stage": "dotenv -e .env.staging -- npx prisma db seed",
-    "prisma:seed:prod": "dotenv -e .env.production -- npx prisma db seed"
+    "prisma:seed:prod": "dotenv -e .env.production -- npx prisma db seed",
+    "prisma:studio": "dotenv -e .env.development -- npx prisma studio"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",

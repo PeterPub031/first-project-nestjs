@@ -27,6 +27,7 @@ import { JwtPayload, SignOptions, decode, sign } from 'jsonwebtoken';
 import { CONFIG_VAR } from '@config/index';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../../../shared/email/email.service';
+import { SalerStatus } from '../enums/saler-status.enum';
 import { UserService } from '@modules/user/services';
 
 export type TokenType =
@@ -119,8 +120,10 @@ export class AuthService {
           password: hashedPassword,
           adminStatus: AdminStatus.BLOCKED,
           userStatus: UserStatus.ACTIVE,
+          salerStatus: SalerStatus.BLOCKED,
           isAdmin: false,
           isUser: true,
+          isSaler: false
       });
       return user;
     }

@@ -19,7 +19,7 @@ export class CategoryController {
     @Get()
     async getAllCategories(
         @Query(new JoiValidationPipe(BaseQueryParamsValidator))
-        query: BaseQueryParams,
+        query: BaseQueryParams
     ) {
         const { count, data } = await this._categoryService.findAllCategories(query);
 

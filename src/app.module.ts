@@ -11,6 +11,7 @@ import { EmailModule } from '@shared/email/email.module';
 import { Environment } from '@common/enums';
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@shared/prisma/prisma.module';
+import { ProductModule } from '@modules/products/product.module';
 import { ResponseModule } from '@shared/response/response.module';
 import { ResponseTransformInterceptor } from '@common/interceptors';
 import { UserModule } from '@modules/user/user.module';
@@ -32,7 +33,8 @@ import { UserModule } from '@modules/user/user.module';
     // Feature modules
     AuthModule,
     UserModule,
-    CategoryModule
+    CategoryModule,
+    ProductModule
   ],
   controllers: [AppController],
   providers: [

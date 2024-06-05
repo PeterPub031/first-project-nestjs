@@ -36,14 +36,14 @@ export class CategoryService {
         return category;     
     }
 
-    // async findCategoryById(categoryId: string) {
-    //     const category = await this._categoryRepo.findCategoryById({
-    //         where: {
-    //             id: categoryId,
-    //         }
-    //     });
-    //     return category;
-    // }
+    async findCategoryById(categoryId: string) {
+        const category = await this._categoryRepo.findCategoryById({
+            where: {
+                id: categoryId,
+            }
+        });
+        return category;
+    }
 
     // async findCategoryByName(categoryName: string) {
     //     const category = await this._categoryRepo.findCategoryByName({

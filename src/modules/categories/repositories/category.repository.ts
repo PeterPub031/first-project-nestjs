@@ -36,7 +36,7 @@ export class CategoryRepository {
         });
   }
 
-    async count(params: Prisma.UserCountArgs) {
+    async count(params: Prisma.CategoryCountArgs) {
         return this._model.count();
     }
 

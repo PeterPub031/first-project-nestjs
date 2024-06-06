@@ -27,7 +27,7 @@ export class ProductRepository {
     }
 
     async count(params: Prisma.ProductCountArgs) {
-        return this._model.count();
+        return this._model.count(params);
     }
 
     async update(params: Prisma.ProductUpdateArgs) {

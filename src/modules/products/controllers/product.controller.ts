@@ -32,7 +32,7 @@ export class ProductController {
         @Param('id') id: string,
         @Query(new JoiValidationPipe(BaseQueryParamsValidator)) query: BaseQueryParams
     ) {
-        const { count, data } = await this._productService.findByCategory_2(id, query);
+        const { count, data } = await this._productService.findByCategory(id, query);
         return ResponseService.paginateResponse({
             count,
             data

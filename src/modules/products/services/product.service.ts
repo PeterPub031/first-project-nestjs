@@ -62,27 +62,27 @@ export class ProductService {
         return categoryIds;
     }
     
-    async findByCategory_1(categoryId: string, query: BaseQueryParams) {
-        const category = await this._categoryService.findCategoryById(categoryId);
-        console.log(category)
-        if(!category) {
-            throw new BadRequestException(CATEGORY_ERRORS.CATEGORY_03);
-        }
-        const categoryIds = await this.getCategoryIds(category)
-        const {page = 1, limit = 10} = query;
-        const count =  await this._productRepo.count({where: {categoryId: {in: categoryIds}}})
-        const data = await this._productRepo.findAllProducts({
-            where: { categoryId: {in: categoryIds}},
-            skip: (page - 1) * limit,
-            take: limit,
-        });
-        return {
-            count, 
-            data
-        }
-    }
+    // async findByCategory(categoryId: string, query: BaseQueryParams) {
+    //     const category = await this._categoryService.findCategoryById(categoryId);
+    //     console.log(category)
+    //     if(!category) {
+    //         throw new BadRequestException(CATEGORY_ERRORS.CATEGORY_03);
+    //     }
+    //     const categoryIds = await this.getCategoryIds(category)
+    //     const {page = 1, limit = 10} = query;
+    //     const count =  await this._productRepo.count({where: {categoryId: {in: categoryIds}}})
+    //     const data = await this._productRepo.findAllProducts({
+    //         where: { categoryId: {in: categoryIds}},
+    //         skip: (page - 1) * limit,
+    //         take: limit,
+    //     });
+    //     return {
+    //         count, 
+    //         data
+    //     }
+    // }
 
-    async findByCategory_2(categoryId: string, query: BaseQueryParams) {
+    async findByCategory(categoryId: string, query: BaseQueryParams) {
         // const category = await this._categoryService.findCategoryById(categoryId);
         // if(!category) {
         //     throw new BadRequestException(CATEGORY_ERRORS.CATEGORY_03);

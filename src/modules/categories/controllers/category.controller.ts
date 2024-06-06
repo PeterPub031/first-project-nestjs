@@ -1,16 +1,17 @@
-import { Controller, Get, Post, UseGuards, Body, Query, Req, Patch, Param, Delete } from "@nestjs/common";
+import { Controller, Get, Post, UseGuards, Body, Query, Req, Patch, Param, Delete, SetMetadata } from "@nestjs/common";
 
-import { AdminJwtAccessAuthGuard } from "@modules/auth/guards/admin-jwt-access-auth.guard";
 import { CategoryService } from "../services";
 import { JoiValidationPipe } from "@common/pipes";
 import { CreateCategoryValidator } from "../validators/create-category.validator";
 import { CreateCategoryDto } from "../dtos";
-import { JwtAccessAuthGuard } from "@modules/auth/guards";
+import { JwtAccessAuthGuard, AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard } from "@modules/auth/guards";
 import { BaseQueryParams } from "@common/dtos";
 import { BaseQueryParamsValidator } from "@common/validators";
 import { ResponseService } from "@shared/response/response.service";
 import { UpdateCategoryValidator } from "../validators";
 import { UpdateCategoryDto } from "../dtos/update-category.dto";
+import { OrGuard } from "@nest-lab/or-guard";
+import { OrGuardMixin } from "@modules/auth/guards/mixin.guard";
 
 @Controller('category')
 export class CategoryController {
@@ -28,8 +29,9 @@ export class CategoryController {
             data,
         });
     }
-    
-    @UseGuards(JwtAccessAuthGuard) // TODO: Change to adminjwt
+
+    @UseGuards(OrGuard([AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard])) // TODO: Change to adminjwt
+    // @UseGuards(OrGuardMixin(new AdminJwtAccessAuthGuard(), new SalerJwtAccessAuthGuard()))
     @Post('create-category')
     async createCategory(
         @Body(new JoiValidationPipe(CreateCategoryValidator)) data: CreateCategoryDto 
@@ -38,7 +40,7 @@ export class CategoryController {
         return category;
     }
 
-    @UseGuards(JwtAccessAuthGuard) // TODO: Change to adminjwt
+    @UseGuards(OrGuard([AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard])) // TODO: Change to adminjwt
     @Patch('update-category/:id')
     async updateCategory(
         @Param('id') id: string, 
@@ -47,7 +49,7 @@ export class CategoryController {
         return await this._categoryService.updateCategory(id, data);
     }
 
-    @UseGuards(JwtAccessAuthGuard)
+    @UseGuards(OrGuard([AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard]))
     @Delete('delete-category/:id')
     async deleteCategory(@Param('id') id: string) {
         return await this._categoryService.deleteCategory(id);

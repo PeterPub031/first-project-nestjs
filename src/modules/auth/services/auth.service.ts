@@ -8,6 +8,8 @@ import {
   AFFILICATE_REFRESH_TOKEN,
   FORGOT_TOKEN,
   REFRESH_TOKEN,
+  SALER_ACCESS_TOKEN,
+  SALER_REFRESH_TOKEN,
 } from '../constants';
 import { AUTH_ERRORS, USER_ERRORS } from 'src/content/errors';
 import { AdminStatus, LoginProviderType, UserStatus } from '../enums';
@@ -38,6 +40,8 @@ export type TokenType =
   | typeof ADMIN_ACCESS_TOKEN
   | typeof ADMIN_REFRESH_TOKEN
   | typeof FORGOT_TOKEN
+  | typeof SALER_ACCESS_TOKEN
+  | typeof SALER_REFRESH_TOKEN
 
 @Injectable()
 export class AuthService {
@@ -47,6 +51,8 @@ export class AuthService {
     [ADMIN_ACCESS_TOKEN]: string;
     [ADMIN_REFRESH_TOKEN]: string;
     [FORGOT_TOKEN]: string;
+    [SALER_ACCESS_TOKEN]: string;
+    [SALER_REFRESH_TOKEN]: string;
   };
 
   private readonly _jwtOptions: {
@@ -55,6 +61,8 @@ export class AuthService {
     [ADMIN_ACCESS_TOKEN]: SignOptions;
     [ADMIN_REFRESH_TOKEN]: SignOptions;
     [FORGOT_TOKEN]: SignOptions;
+    [SALER_ACCESS_TOKEN]: SignOptions;
+    [SALER_REFRESH_TOKEN]: SignOptions;
   };
 
   constructor(
@@ -83,6 +91,14 @@ export class AuthService {
         CONFIG_VAR.JWT_FORGOT_SECRET,
         "default_secret"
       ),
+      [SALER_ACCESS_TOKEN]: this._configService.get(
+        CONFIG_VAR.SALER_JWT_SECRET,
+        "default_secret"
+      ),
+      [SALER_REFRESH_TOKEN]: this._configService.get(
+        CONFIG_VAR.SALER_JWT_REFRESH_SECRET,
+        "default_secret"
+      ),
     };
 
     this._jwtOptions = {
@@ -100,6 +116,12 @@ export class AuthService {
       },
       [FORGOT_TOKEN]: {
         expiresIn: this._configService.get(CONFIG_VAR.JWT_FORGOT_TOKEN_EXPIRES_IN),
+      },
+      [SALER_ACCESS_TOKEN]: {
+        expiresIn: this._configService.get(CONFIG_VAR.JWT_EXPIRES_IN),
+      },
+      [SALER_REFRESH_TOKEN]: {
+        expiresIn: this._configService.get(CONFIG_VAR.JWT_REFRESH_EXPIRES_IN),
       },
     };
   }
@@ -217,6 +239,20 @@ export class AuthService {
     return await this.generateTokens(account);
   }
 
+  async salerLogin(data: LoginDto) {
+    const account = await this._userService.findUserById(data.id);
+    // check có roll, id not throw error
+    if(account.isSaler == false) {
+      throw new ForbiddenException('This is not a saler account')
+    }
+    // check có bi block ko, id not throw error
+    if(account.salerStatus == SalerStatus.BLOCKED) {
+      throw new ForbiddenException('This account has been blocked')
+    }
+    // if ok, generate tokens (access + refresh)
+    return await this.generateTokens(account);
+  }
+
   /** ============================== Passport ============================== */
   // For local strategy
   async validateUser(id: string, password: string) {
@@ -246,8 +282,8 @@ export class AuthService {
         delete data[key];
       }
     } 
-    const accessTokenType = data.isAdmin ? ADMIN_ACCESS_TOKEN : ACCESS_TOKEN;
-    const refreshTokenType = data.isAdmin ? ADMIN_REFRESH_TOKEN : REFRESH_TOKEN;
+    const accessTokenType = data.isAdmin ? ADMIN_ACCESS_TOKEN : (data.isSaler ? SALER_ACCESS_TOKEN : ACCESS_TOKEN);
+    const refreshTokenType = data.isAdmin ? ADMIN_REFRESH_TOKEN : (data.isSaler ? SALER_REFRESH_TOKEN : REFRESH_TOKEN);
     const [accessToken, refreshToken] = await Promise.all([
       this._signPayload(data, accessTokenType),
       this._signPayload({ id: data.id }, refreshTokenType),
@@ -303,6 +339,18 @@ export class AuthService {
       throw new ForbiddenException('This account has been blocked')
     }
     return user;
+  }  
+
+  async validateSalerAccount(id: string) {
+    const saler = await this._userService.findUserById(id);
+    if(saler.isSaler == false) {
+      throw new ForbiddenException('This is not a saler account')
+    }
+    // check có bi block ko, id not throw error
+    if(saler.salerStatus == SalerStatus.BLOCKED) {
+      throw new ForbiddenException('This account has been blocked')
+    }
+    return saler;
   }  
 
   /** ============================== General ============================== */

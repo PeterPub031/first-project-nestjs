@@ -40,11 +40,33 @@ export class CategoryService {
         const category = await this._categoryRepo.findCategoryById({
             where: {
                 id: categoryId,
-            }
+            },
+            include: {
+                children: {
+                    include: {
+                        children: true,
+                    }
+                }
+            },
         });
         return category;
     }
 
+    // async findCategoryById(categoryId: string) {
+    //     const category = await this._categoryRepo.findCategoryById({
+    //         where: {
+    //             id: categoryId,
+    //         },
+    //         include: {
+    //             parent: {
+    //                 include: {
+    //                     parent: true,
+    //                 }
+    //             }
+    //         },
+    //     });
+    //     return category;
+    // }
     // async findCategoryByName(categoryName: string) {
     //     const category = await this._categoryRepo.findCategoryByName({
     //         where: {
@@ -76,7 +98,7 @@ export class CategoryService {
             data
         };
     }
-    
+       
     async updateCategory(id: string, data: UpdateCategoryDto) {
         const category = await this._categoryRepo.findCategoryById({
             where: { id }

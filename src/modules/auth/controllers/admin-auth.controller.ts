@@ -1,10 +1,11 @@
 import { AdminJwtAccessAuthGuard } from './../guards/admin-jwt-access-auth.guard';
 import { JoiValidationPipe } from '@common/pipes';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { GetStartedDto, LoginDto, RefreshTokenDto } from '../dtos';
+import { ChangePasswordDto, GetStartedDto, LoginDto, RefreshTokenDto } from '../dtos';
 import { LocalAuthGuard } from '../guards';
 import { AuthService } from '../services';
-import { GetStartedValidator, RefreshTokenValidator } from '../validators';
+import { ChangePasswordValidator, GetStartedValidator, RefreshTokenValidator } from '../validators';
+import { RequestUser } from '@common/decorators';
 
 @Controller('admin/auth')
 export class AdminAuthController {
@@ -30,12 +31,13 @@ export class AdminAuthController {
     return this._authService.adminRefreshToken();
   }
 
-  // @UseGuards(AdminJwtAccessAuthGuard)
-  // @Post('update-password')
-  // async updatePassword(
-  //   // @Body(new JoiValidationPipe())
-  //   data: 
-  // ) {
-  //   return this._authService.changePassword()
-  // }
+  @UseGuards(AdminJwtAccessAuthGuard)
+  @Post('update-password')
+  async updatePassword(
+    @RequestUser('id') userId: string,
+    @Body(new JoiValidationPipe(ChangePasswordValidator))
+    data: ChangePasswordDto
+  ) {
+    return this._authService.changePassword(userId, data);
+  }
 }

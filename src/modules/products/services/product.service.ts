@@ -6,6 +6,7 @@ import { CategoryService } from "@modules/categories/services";
 import { CreateProductDto } from "../dtos/create-product.dto";
 import { ProductRepository } from "../repositories";
 import { UpdateProductDto } from "../dtos/update-product.dto";
+import { query } from 'express';
 
 @Injectable()
 export class ProductService {
@@ -19,7 +20,7 @@ export class ProductService {
         if(!category) {
             throw new BadRequestException(CATEGORY_ERRORS.CATEGORY_03)
         }
-        if(category.level == 2) {
+        if(category.level < 3 ) {
             return await this._productRepo.create({
                 name: data.name,
                 description: data.description,
@@ -47,6 +48,73 @@ export class ProductService {
             count,
             data
         };
+    }
+
+    async getCategoryIds(category) {
+        const categoryIds = [category.id];
+
+        if (category.children) {
+            for (const child of category.children) {
+                const childCategoryIds = await this.getCategoryIds(child);
+                categoryIds.push(...childCategoryIds);
+            }
+        }
+        return categoryIds;
+    }
+    
+    async findByCategory_1(categoryId: string, query: BaseQueryParams) {
+        const category = await this._categoryService.findCategoryById(categoryId);
+        console.log(category)
+        if(!category) {
+            throw new BadRequestException(CATEGORY_ERRORS.CATEGORY_03);
+        }
+        const categoryIds = await this.getCategoryIds(category)
+        const {page = 1, limit = 10} = query;
+        const count =  await this._productRepo.count({where: {categoryId: {in: categoryIds}}})
+        const data = await this._productRepo.findAllProducts({
+            where: { categoryId: {in: categoryIds}},
+            skip: (page - 1) * limit,
+            take: limit,
+        });
+        return {
+            count, 
+            data
+        }
+    }
+
+    async findByCategory_2(categoryId: string, query: BaseQueryParams) {
+        // const category = await this._categoryService.findCategoryById(categoryId);
+        // if(!category) {
+        //     throw new BadRequestException(CATEGORY_ERRORS.CATEGORY_03);
+        // }
+        const {page = 1, limit = 10} = query;
+        const [count, data] = await Promise.all([
+            this._productRepo.count({
+                where: {
+                    OR: [
+                        { categoryId: categoryId },
+                        { category: { parentId: categoryId } },
+                        { category: { parent: { parentId: categoryId } } }
+                    ]
+                }
+            }),
+            this._productRepo.findAllProducts({
+                where: {
+                    OR: [
+                        {categoryId : categoryId},
+                        {category: {parentId: categoryId}},
+                        {category: {parent: {parentId: categoryId}}}
+                    ]
+                },
+                skip: (page - 1) * limit,
+                take: limit,
+            })
+        ])
+        console.log(data)
+        return {
+            count, 
+            data
+        }
     }
     
     async updateProduct(id: string, data: UpdateProductDto) {

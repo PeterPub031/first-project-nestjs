@@ -36,6 +36,7 @@
     "prisma:studio": "dotenv -e .env.development -- npx prisma studio"
   },
   "dependencies": {
+    "@nest-lab/or-guard": "^2.4.1",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/axios": "^3.0.0",
     "@nestjs/common": "^10.0.0",

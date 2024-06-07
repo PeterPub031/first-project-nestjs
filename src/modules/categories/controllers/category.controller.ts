@@ -11,7 +11,8 @@ import { ResponseService } from "@shared/response/response.service";
 import { UpdateCategoryValidator } from "../validators";
 import { UpdateCategoryDto } from "../dtos/update-category.dto";
 import { OrGuard } from "@nest-lab/or-guard";
-import { OrGuardMixin } from "@modules/auth/guards/mixin.guard";
+import { AuthGuard } from "@nestjs/passport";
+import { AdminJwtAccessStrategy, SalerJwtAccessStrategy } from "@modules/auth/strategies";
 
 @Controller('category')
 export class CategoryController {
@@ -31,6 +32,7 @@ export class CategoryController {
     }
 
     @UseGuards(OrGuard([AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard])) // TODO: Change to adminjwt
+    // @UseGuards(AuthGuard([AdminJwtAccessAuthGuard, SalerJwtAccessStrategy]))
     // @UseGuards(OrGuardMixin(new AdminJwtAccessAuthGuard(), new SalerJwtAccessAuthGuard()))
     @Post('create-category')
     async createCategory(
@@ -40,7 +42,7 @@ export class CategoryController {
         return category;
     }
 
-    @UseGuards(OrGuard([AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard])) // TODO: Change to adminjwt
+    // @UseGuards(OrGuard([AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard])) // TODO: Change to adminjwt
     @Patch('update-category/:id')
     async updateCategory(
         @Param('id') id: string, 
@@ -49,7 +51,7 @@ export class CategoryController {
         return await this._categoryService.updateCategory(id, data);
     }
 
-    @UseGuards(OrGuard([AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard]))
+    // @UseGuards(OrGuard([AdminJwtAccessAuthGuard, SalerJwtAccessAuthGuard]))
     @Delete('delete-category/:id')
     async deleteCategory(@Param('id') id: string) {
         return await this._categoryService.deleteCategory(id);

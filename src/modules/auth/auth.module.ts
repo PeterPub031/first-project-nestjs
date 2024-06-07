@@ -6,10 +6,13 @@ import {
   SalerJwtAccessStrategy,
 } from './strategies';
 
+import { AuthQueueService } from './services/auth-queue.service';
 import { AuthService } from './services';
 import { EmailModule } from '@shared/email/email.module';
 import { EmailService } from '@shared/email/email.service';
 import { Module } from '@nestjs/common';
+import { QueueModule } from '@shared/queue/queue.module';
+import { QueueService } from '@shared/queue/queue.service';
 import { SalerController } from './controllers/saler-auth.controller';
 import { UserModule } from '@modules/user/user.module';
 import { UserRepository } from '@modules/user/repositories';
@@ -23,6 +26,7 @@ import { UserService } from '@modules/user/services';
     UserService,
     UserRepository,
     EmailService,
+    AuthQueueService,
     // Passport strategies
     JwtAccessStrategy,
     AdminJwtAccessStrategy,
@@ -32,6 +36,6 @@ import { UserService } from '@modules/user/services';
 
     // Repositories
   ],
-  exports: [AuthService],
+  exports: [AuthService, AuthQueueService],
 })
 export class AuthModule {}

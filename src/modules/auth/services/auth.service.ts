@@ -26,6 +26,7 @@ import {
 } from '../dtos';
 import { JwtPayload, SignOptions, decode, sign } from 'jsonwebtoken';
 
+import { AuthQueueService } from './auth-queue.service';
 import { CONFIG_VAR } from '@config/index';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../../../shared/email/email.service';
@@ -68,7 +69,8 @@ export class AuthService {
   constructor(
     private readonly _configService: ConfigService,
     private readonly _userService: UserService,
-    public readonly _mailerService: EmailService,
+    // public readonly _mailerService: EmailService,
+    private readonly _authQueueService: AuthQueueService
   ) {
     this._jwtKeys = {
       [ACCESS_TOKEN]: this._configService.get(
@@ -200,8 +202,8 @@ export class AuthService {
       throw new BadRequestException(USER_ERRORS.USER_01);
     }
     const forgotToken = this._signPayload({id: user.id}, FORGOT_TOKEN );
-    // await this._userService.assignForgotPassword(user.id, forgotToken);
-    await this._mailerService.sendResetPasswordEmail(email, forgotToken);
+    await this._userService.assignForgotPassword(user.id, forgotToken);
+    await this._authQueueService.addJobSendForgotPasswordMail(forgotToken, email );
   }
 
   async resetPassword(data: ResetPasswordDto) { 

@@ -23,5 +23,7 @@ export const ConfigSchema = Joi.object()
     [CONFIG_VAR.JWT_FORGOT_TOKEN_EXPIRES_IN]: Joi.string().trim().required(),
     [CONFIG_VAR.SALER_JWT_SECRET]: Joi.string().trim().required(),
     [CONFIG_VAR.SALER_JWT_REFRESH_SECRET]: Joi.string().trim().required(),
+    [CONFIG_VAR.REDIS_HOST]: Joi.string().trim().required(),
+    [CONFIG_VAR.REDIS_PORT]: Joi.string().trim().required(),
   })
   .options({ stripUnknown: true });

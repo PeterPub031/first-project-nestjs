@@ -1,0 +1,13 @@
+model TrackingOrder {
+    // TODO có nên bỏ user id không
+    userId  String @map("user_id") @db.VarChar(36)
+    orderId String @map("order_id") @db.VarChar(36)
+    user    User   @relation(fields: [userId], references: [id])
+    order   Order  @relation(fields: [orderId], references: [id])
+
+    status    String   @db.VarChar(20) // status : chờ xác nhận if( status === xác nhận) {hủy nếu muốn} => xác nhận => đang giao hàng => đã nhận hàng  
+    updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+    @@id([orderId, status])
+    @@map("tracking_orders")
+}

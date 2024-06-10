@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from "bcryptjs";
 
 import {
   ACCESS_TOKEN,
@@ -10,10 +10,17 @@ import {
   REFRESH_TOKEN,
   SALER_ACCESS_TOKEN,
   SALER_REFRESH_TOKEN,
-} from '../constants';
-import { AUTH_ERRORS, USER_ERRORS } from 'src/content/errors';
-import { AdminStatus, LoginProviderType, UserStatus } from '../enums';
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+} from "../constants";
+import { AUTH_ERRORS, USER_ERRORS } from "src/content/errors";
+import { AdminStatus, LoginProviderType, UserStatus } from "../enums";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import {
   ChangePasswordDto,
   GetStartedDto,
@@ -23,15 +30,21 @@ import {
   RefreshTokenDto,
   RegisterDto,
   ResetPasswordDto,
-} from '../dtos';
-import { JwtPayload, SignOptions, decode, sign } from 'jsonwebtoken';
+} from "../dtos";
+import { JwtPayload, SignOptions, decode, sign } from "jsonwebtoken";
 
-import { AuthQueueService } from './auth-queue.service';
-import { CONFIG_VAR } from '@config/index';
-import { ConfigService } from '@nestjs/config';
-import { EmailService } from '../../../shared/email/email.service';
-import { SalerStatus } from '../enums/saler-status.enum';
-import { UserService } from '@modules/user/services';
+import { AuthQueueService } from "./auth-queue.service";
+import { CONFIG_VAR } from "@config/index";
+import { ConfigService } from "@nestjs/config";
+import { EmailService } from "../../../shared/email/email.service";
+import { SalerStatus } from "../enums/saler-status.enum";
+import { UserService } from "@modules/user/services";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
+import { randomString } from "@common/utils";
+import { MINUTE } from "@common/constants";
+
+// import { RedisService } from '@shared/redis/redis.service';
 
 export type TokenType =
   | typeof ACCESS_TOKEN
@@ -42,7 +55,7 @@ export type TokenType =
   | typeof ADMIN_REFRESH_TOKEN
   | typeof FORGOT_TOKEN
   | typeof SALER_ACCESS_TOKEN
-  | typeof SALER_REFRESH_TOKEN
+  | typeof SALER_REFRESH_TOKEN;
 
 @Injectable()
 export class AuthService {
@@ -70,7 +83,8 @@ export class AuthService {
     private readonly _configService: ConfigService,
     private readonly _userService: UserService,
     // public readonly _mailerService: EmailService,
-    private readonly _authQueueService: AuthQueueService
+    private readonly _authQueueService: AuthQueueService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache // private readonly _redisService: RedisService
   ) {
     this._jwtKeys = {
       [ACCESS_TOKEN]: this._configService.get(
@@ -117,7 +131,9 @@ export class AuthService {
         expiresIn: this._configService.get(CONFIG_VAR.JWT_REFRESH_EXPIRES_IN),
       },
       [FORGOT_TOKEN]: {
-        expiresIn: this._configService.get(CONFIG_VAR.JWT_FORGOT_TOKEN_EXPIRES_IN),
+        expiresIn: this._configService.get(
+          CONFIG_VAR.JWT_FORGOT_TOKEN_EXPIRES_IN
+        ),
       },
       [SALER_ACCESS_TOKEN]: {
         expiresIn: this._configService.get(CONFIG_VAR.JWT_EXPIRES_IN),
@@ -134,20 +150,19 @@ export class AuthService {
    */
   async register(data: RegisterDto) {
     const account = await this._userService.findOneWithEmail(data.email);
-    const hashedPassword = await this._hashPassword(data.password)
-    if(account && account.deletedAt == null){
+    const hashedPassword = await this._hashPassword(data.password);
+    if (account && account.deletedAt == null) {
       throw new BadRequestException(AUTH_ERRORS.AUTH_02);
-    }
-    else {
-        const user = await this._userService.create({
-          ...data,
-          password: hashedPassword,
-          adminStatus: AdminStatus.BLOCKED,
-          userStatus: UserStatus.ACTIVE,
-          salerStatus: SalerStatus.BLOCKED,
-          isAdmin: false,
-          isUser: true,
-          isSaler: false
+    } else {
+      const user = await this._userService.create({
+        ...data,
+        password: hashedPassword,
+        adminStatus: AdminStatus.BLOCKED,
+        userStatus: UserStatus.ACTIVE,
+        salerStatus: SalerStatus.BLOCKED,
+        isAdmin: false,
+        isUser: true,
+        isSaler: false,
       });
       return user;
     }
@@ -159,12 +174,12 @@ export class AuthService {
   async login(data: LoginDto) {
     const account = await this._userService.findUserById(data.id);
     // check có roll, id not throw error
-    if(account.isUser == false) {
-      throw new ForbiddenException('This is not a user account')
+    if (account.isUser == false) {
+      throw new ForbiddenException("This is not a user account");
     }
     // check có bi block ko, id not throw error
-    else if(account.userStatus == UserStatus.BLOCKED) {
-      throw new ForbiddenException('This account has been blocked')
+    else if (account.userStatus == UserStatus.BLOCKED) {
+      throw new ForbiddenException("This account has been blocked");
     }
     // if ok, generate tokens (access + refresh)
     else return await this.generateTokens(account);
@@ -173,7 +188,7 @@ export class AuthService {
   async userRefreshToken(data: RefreshTokenDto) {
     const decodedToken = await this._decodeToken(data.refresh);
     let userId: string;
-    if (typeof decodedToken === 'string') {
+    if (typeof decodedToken === "string") {
       userId = decodedToken;
     } else {
       userId = decodedToken.id;
@@ -186,14 +201,17 @@ export class AuthService {
 
   async changePassword(userId: string, data: ChangePasswordDto) {
     const account = await this._userService.findUserById(userId);
-    let isValid: boolean = await this._comparePasswords(data.currentPassword, account.password);
-    if(isValid == false) {
+    let isValid: boolean = await this._comparePasswords(
+      data.currentPassword,
+      account.password
+    );
+    if (isValid == false) {
       throw new BadRequestException(AUTH_ERRORS.AUTH_03);
-    } else { 
+    } else {
       const hashedPassword = await this._hashPassword(data.password);
       await this._userService.updatePassWord(userId, hashedPassword);
-      return 'Password has been changed successfully'
-    } 
+      return "Password has been changed successfully";
+    }
   }
 
   async forgotPassword(email: string) {
@@ -201,28 +219,41 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException(USER_ERRORS.USER_01);
     }
-    const forgotToken = this._signPayload({id: user.id}, FORGOT_TOKEN );
-    await this._userService.assignForgotPassword(user.id, forgotToken);
-    await this._authQueueService.addJobSendForgotPasswordMail(forgotToken, email );
+    // const forgotToken = this._signPayload({ id: user.id }, FORGOT_TOKEN);
+
+    // await this._userService.assignForgotPassword(user.id, forgotToken);
+    // await this.cacheManager.set("my-cache-key", "123241", 36000);
+    // const test = await this.cacheManager.get("my-cache-key");
+    // console.log(test);
+    const forgotToken = randomString(25);
+    await this.cacheManager.set(forgotToken, user.id, 2 * MINUTE);
+    await this._authQueueService.addJobSendForgotPasswordMail(
+      forgotToken,
+      email
+    );
   }
 
-  async resetPassword(data: ResetPasswordDto) { 
-    const decodedToken = this._decodeToken(data.code);
-    let userId: string;
-    if (typeof decodedToken === 'string') {
-      userId = decodedToken;
-    } else {
-      userId = decodedToken.id;
+  async resetPassword(data: ResetPasswordDto) {
+    const userId: string = await this.cacheManager.get(data.code);
+    if (!userId) {
+      throw new NotFoundException("User Id not found");
     }
+    // const decodedToken = this._decodeToken(data.code);
+    // let userId: string;
+    // if (typeof decodedToken === "string") {
+    //   userId = decodedToken;
+    // } else {
+    //   userId = decodedToken.id;
+    // }
+    // await this.cacheManager.del(data.code);
     const user = await this._userService.findUserById(userId);
+    console.log(user);
     if (!user) {
       throw new BadRequestException(USER_ERRORS.USER_01);
     }
-    else {
-      const hashedPassword = await this._hashPassword(data.password);
-      await this._userService.updatePassWord(user.id, hashedPassword);
-      return 'Your password has been reset successfully'
-    }
+    const hashedPassword = await this._hashPassword(data.password);
+    await this._userService.updatePassWord(user.id, hashedPassword);
+    return "Your password has been reset successfully";
   }
 
   // async adminGetStarted(data: GetStartedDto) {}
@@ -230,12 +261,12 @@ export class AuthService {
   async adminLogin(data: LoginDto) {
     const account = await this._userService.findUserById(data.id);
     // check có roll, id not throw error
-    if(account.isAdmin == false) {
-      throw new ForbiddenException('This is not a admin account')
+    if (account.isAdmin == false) {
+      throw new ForbiddenException("This is not a admin account");
     }
     // check có bi block ko, id not throw error
-    if(account.adminStatus == AdminStatus.BLOCKED) {
-      throw new ForbiddenException('This account has been blocked')
+    if (account.adminStatus == AdminStatus.BLOCKED) {
+      throw new ForbiddenException("This account has been blocked");
     }
     // if ok, generate tokens (access + refresh)
     return await this.generateTokens(account);
@@ -244,12 +275,12 @@ export class AuthService {
   async salerLogin(data: LoginDto) {
     const account = await this._userService.findUserById(data.id);
     // check có roll, id not throw error
-    if(account.isSaler == false) {
-      throw new ForbiddenException('This is not a saler account')
+    if (account.isSaler == false) {
+      throw new ForbiddenException("This is not a saler account");
     }
     // check có bi block ko, id not throw error
-    if(account.salerStatus == SalerStatus.BLOCKED) {
-      throw new ForbiddenException('This account has been blocked')
+    if (account.salerStatus == SalerStatus.BLOCKED) {
+      throw new ForbiddenException("This account has been blocked");
     }
     // if ok, generate tokens (access + refresh)
     return await this.generateTokens(account);
@@ -259,18 +290,15 @@ export class AuthService {
   // For local strategy
   async validateUser(id: string, password: string) {
     const user = await this._userService.findUserById(id);
-    if (
-      !user ||
-      !user.password)
-    {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!user || !user.password) {
+      throw new UnauthorizedException("Invalid credentials");
     }
     const isPasswordValid = await this._comparePasswords(
       password,
       user.password
     );
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Incorrect email or password');
+      throw new UnauthorizedException("Incorrect email or password");
     }
     return user;
   }
@@ -283,9 +311,17 @@ export class AuthService {
       if (fields.includes(key)) {
         delete data[key];
       }
-    } 
-    const accessTokenType = data.isAdmin ? ADMIN_ACCESS_TOKEN : (data.isSaler ? SALER_ACCESS_TOKEN : ACCESS_TOKEN);
-    const refreshTokenType = data.isAdmin ? ADMIN_REFRESH_TOKEN : (data.isSaler ? SALER_REFRESH_TOKEN : REFRESH_TOKEN);
+    }
+    const accessTokenType = data.isAdmin
+      ? ADMIN_ACCESS_TOKEN
+      : data.isSaler
+      ? SALER_ACCESS_TOKEN
+      : ACCESS_TOKEN;
+    const refreshTokenType = data.isAdmin
+      ? ADMIN_REFRESH_TOKEN
+      : data.isSaler
+      ? SALER_REFRESH_TOKEN
+      : REFRESH_TOKEN;
     const [accessToken, refreshToken] = await Promise.all([
       this._signPayload(data, accessTokenType),
       this._signPayload({ id: data.id }, refreshTokenType),
@@ -321,39 +357,39 @@ export class AuthService {
 
   async validateAdminAccount(id: string) {
     const admin = await this._userService.findUserById(id);
-    if(admin.isAdmin == false) {
-      throw new ForbiddenException('This is not a admin account')
+    if (admin.isAdmin == false) {
+      throw new ForbiddenException("This is not a admin account");
     }
     // check có bi block ko, id not throw error
-    if(admin.adminStatus == AdminStatus.BLOCKED) {
-      throw new ForbiddenException('This account has been blocked')
+    if (admin.adminStatus == AdminStatus.BLOCKED) {
+      throw new ForbiddenException("This account has been blocked");
     }
     return admin;
-  }  
+  }
 
   async validateUserAccount(id: string) {
     const user = await this._userService.findUserById(id);
-    if(user.isUser == false) {
-      throw new ForbiddenException('This is not a user account')
+    if (user.isUser == false) {
+      throw new ForbiddenException("This is not a user account");
     }
     // check có bi block ko, id not throw error
-    if(user.userStatus == UserStatus.BLOCKED) {
-      throw new ForbiddenException('This account has been blocked')
+    if (user.userStatus == UserStatus.BLOCKED) {
+      throw new ForbiddenException("This account has been blocked");
     }
     return user;
-  }  
+  }
 
   async validateSalerAccount(id: string) {
     const saler = await this._userService.findUserById(id);
-    if(saler.isSaler == false) {
-      throw new ForbiddenException('This is not a saler account')
+    if (saler.isSaler == false) {
+      throw new ForbiddenException("This is not a saler account");
     }
     // check có bi block ko, id not throw error
-    if(saler.salerStatus == SalerStatus.BLOCKED) {
-      throw new ForbiddenException('This account has been blocked')
+    if (saler.salerStatus == SalerStatus.BLOCKED) {
+      throw new ForbiddenException("This account has been blocked");
     }
     return saler;
-  }  
+  }
 
   /** ============================== General ============================== */
 }

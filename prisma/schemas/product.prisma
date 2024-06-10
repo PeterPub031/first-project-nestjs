@@ -6,10 +6,15 @@ model Product {
     details     String   @db.VarChar(255)
     color       String?  @db.VarChar(255)
     imageURL    String   @map("image_url") @db.Text
+    quantity    Int
+    sold        Int      @default(0) // cấm admin cập nhật
     category    Category @relation(fields: [categoryId], references: [id])
     categoryId  String   @map("category_id") @db.VarChar(36)
 
     createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
     updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz(3)
     deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+    cartItems    CartItem[]
+    orderDetails OrderDetail[]
 }

@@ -10,6 +10,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model CartItem {
+  userId    String @map("user_id") @db.VarChar(36)
+  productId String @map("product_id") @db.VarChar(36)
+  quantity  Int
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@id([userId, productId])
+  @@map("cart-items")
+}
+
 model Category {
   id       String     @id @default(uuid()) @db.VarChar(36)
   name     String     @db.VarChar(255)
@@ -24,6 +36,41 @@ model Category {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
 }
 
+model OrderDetail {
+  orderId   String @map("order_id") @db.VarChar(36)
+  productId String @map("product_id") @db.VarChar(36)
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  producName      String @map("product_name") @db.VarChar(255)
+  productPrice    String @map("product_price") @db.VarChar(255)
+  productQuantity String @map("product_quantity") @db.VarChar(255)
+
+  @@id([orderId, productId])
+  @@map("order_details")
+}
+
+model Order {
+  id String @id @default(uuid()) @db.VarChar(36)
+
+  // TODO có nên bỏ user id không
+  user            User   @relation(fields: [userId], references: [id])
+  userId          String @map("user_id") @db.VarChar(36)
+  paymentMethod   String @map("payment_method") @db.VarChar(100)
+  shippingAddress String @map("shipping_address") @db.VarChar(255)
+  shippingMethod  String @map("shipping_method") @db.VarChar(100)
+  phone           String @db.VarChar(10)
+  status          String @db.VarChar(30)
+  total           Float
+  note            String @db.VarChar(255)
+
+  orderDetails   OrderDetail[]
+  trackingOrders TrackingOrder[]
+
+  @@map("orders")
+}
+
 model Product {
   id          String   @id @default(uuid()) @db.VarChar(36)
   name        String   @db.VarChar(255)
@@ -32,12 +79,17 @@ model Product {
   details     String   @db.VarChar(255)
   color       String?  @db.VarChar(255)
   imageURL    String   @map("image_url") @db.Text
+  quantity    Int
+  sold        Int      @default(0) // cấm admin cập nhật
   category    Category @relation(fields: [categoryId], references: [id])
   categoryId  String   @map("category_id") @db.VarChar(36)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  cartItems    CartItem[]
+  orderDetails OrderDetail[]
 }
 
 model Seed {
@@ -46,6 +98,21 @@ model Seed {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@map("seeds")
+}
+
+model TrackingOrder {
+  // TODO có nên bỏ user id không
+  userId  String @map("user_id") @db.VarChar(36)
+  orderId String @map("order_id") @db.VarChar(36)
+  user    User   @relation(fields: [userId], references: [id])
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  status    String   @db.VarChar(20) // status : chờ xác nhận if( status === xác nhận) {hủy nếu muốn} => xác nhận => đang giao hàng => đã nhận hàng 
+  // <=> tùy tâm trạng admin sản phẩm có thể lổi
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  @@id([orderId, status])
+  @@map("tracking_orders")
 }
 
 model User {
@@ -65,4 +132,8 @@ model User {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  cartItem       CartItem[]
+  orders         Order[]
+  trackingOrders TrackingOrder[]
 }

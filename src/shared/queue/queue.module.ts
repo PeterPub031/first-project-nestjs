@@ -10,26 +10,25 @@ import { QueueService } from "./queue.service";
 
 @Global()
 @Module({
-    imports: [
-        BullModule.forRootAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: async (config: ConfigService) => {
-                console.log(config.get(CONFIG_VAR.REDIS_HOST), config.get(CONFIG_VAR.REDIS_PORT))
-                return {
-                    redis: {
-                        host: config.get(CONFIG_VAR.REDIS_HOST),
-                        port: config.get(CONFIG_VAR.REDIS_PORT),
-                        // password: '123',
-                    }
-                }
-            }
-        }),
-        BullModule.registerQueueAsync({ name: QUEUE_NAMES.AUTH_QUEUE }),
-        AuthModule
-    ],
-    providers: [QueueService, AuthConsumer],
-    exports: [QueueService]
+  imports: [
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => {
+        // console.log(config.get(CONFIG_VAR.REDIS_HOST), config.get(CONFIG_VAR.REDIS_PORT))
+        return {
+          redis: {
+            host: config.get(CONFIG_VAR.REDIS_HOST),
+            port: config.get(CONFIG_VAR.REDIS_PORT),
+            // password: '123',
+          },
+        };
+      },
+    }),
+    BullModule.registerQueueAsync({ name: QUEUE_NAMES.AUTH_QUEUE }),
+    AuthModule,
+  ],
+  providers: [QueueService, AuthConsumer],
+  exports: [QueueService],
 })
-
 export class QueueModule {}

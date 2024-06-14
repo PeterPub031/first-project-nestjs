@@ -7,4 +7,8 @@ export const PRODUCT_ERRORS = {
     code: "PRODUCT_ERRORS",
     message: "PRODUCT CAN NOT BE CREATE",
   },
+  PRODUCT_03: {
+    code: "PRODUCT_QUANTITY",
+    message: "PRODUCT IS OUT OF STOCK",
+  },
 };

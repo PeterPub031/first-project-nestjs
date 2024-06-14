@@ -11,6 +11,7 @@ import { ConfigSchema } from "@config/config.schema";
 import { EmailModule } from "@shared/email/email.module";
 import { Environment } from "@common/enums";
 import { Module } from "@nestjs/common";
+import { OrderModule } from "@modules/orders/categories/order.module";
 import { PrismaModule } from "@shared/prisma/prisma.module";
 import { ProductModule } from "@modules/products/product.module";
 import { QueueModule } from "@shared/queue/queue.module";
@@ -48,6 +49,7 @@ import { redisStore } from "cache-manager-redis-yet";
     UserModule,
     CategoryModule,
     ProductModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [

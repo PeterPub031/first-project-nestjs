@@ -43,9 +43,9 @@ model OrderDetail {
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
 
-  producName      String @map("product_name") @db.VarChar(255)
-  productPrice    String @map("product_price") @db.VarChar(255)
-  productQuantity String @map("product_quantity") @db.VarChar(255)
+  productName     String @map("product_name") @db.VarChar(255)
+  productPrice    Float  @map("product_price")
+  productQuantity Int    @map("product_quantity")
 
   @@id([orderId, productId])
   @@map("order_details")
@@ -107,8 +107,7 @@ model TrackingOrder {
   user    User   @relation(fields: [userId], references: [id])
   order   Order  @relation(fields: [orderId], references: [id])
 
-  status    String   @db.VarChar(20) // status : chờ xác nhận if( status === xác nhận) {hủy nếu muốn} => xác nhận => đang giao hàng => đã nhận hàng 
-  // <=> tùy tâm trạng admin sản phẩm có thể lổi
+  status    String   @db.VarChar(20) // status : chờ xác nhận if( status === xác nhận) {hủy nếu muốn} => xác nhận => đang giao hàng => đã nhận hàng  
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
 
   @@id([orderId, status])

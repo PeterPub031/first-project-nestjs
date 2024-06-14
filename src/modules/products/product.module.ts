@@ -6,9 +6,9 @@ import { ProductRepository } from "./repositories";
 import { ProductService } from "./services";
 
 @Module({
-    imports: [CategoryModule],
-    providers: [ProductService, ProductRepository],
-    controllers: [ProductController],
+  imports: [CategoryModule],
+  providers: [ProductService, ProductRepository],
+  controllers: [ProductController],
+  exports: [ProductService],
 })
-
 export class ProductModule {}
